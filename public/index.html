@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shopping List</title>
+    <link href="css/bootstrap.css" rel="stylesheet" />
+    <link href="css/bootstrap-theme.css" rel="stylesheet" />
+    <script src="js/jquery-2.1.1.min.js"></script>
+    <script src="js/model.js"></script>
+    <script src="js/view.js"></script>
+    <script src="js/controller.js"></script>
+
+
+
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+        <h1> <span id="title">TITLE GOES HERE</span>
+
+        </h1>
+    </div>
+
+	<div class="panel">
+		<div id="totalprice"> TOTAL PRICE GOES HERE </div>
+
+	</div>
+
+    <div class="panel">
+        <div class="input-group">
+		    <span class="input-group-btn" >
+			     <button id="refreshBtn" class="btn btn-default" onclick="shoppingApp.reloadModel()">
+				     Refresh</button>
+				</span>
+            <input type="text" class="form-control" id="newItemName" />
+            <span class="input-group-btn">
+                <button id="addBtn" class="btn btn-default" onclick="shoppingApp.addItem(this)">Add</button>
+            </span>
+			</div>
+
+
+        </div>
+
+
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Item Price</th>
+                    <th>Quantity</th>
+					<th>Total Price</th>
+					<th>Purchased</th>
+					<th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="itemTableBody">
+          
+            </tbody>
+        </table>
+
+        <div class="checkbox-inline">
+            <label><input id="showCompleteCheckbox" type="checkbox" onclick="shoppingApp.refreshView()"> 
+	            Show Purchased Items</label>
+        </div>
+
+        <div class="checkbox-inline">
+            <label><input id="cutOffText" type="text"  onchange="shoppingApp.refreshView()"> 
+	            Cutoff</label>
+        </div>
+    </div>
+ </div>
+</body>
+<script>
+// this is the code that actually starts the JavaScript application!!
+// when the document has been fully loaded, all the shoppingApp.start() method
+$(document).ready(shoppingApp.start());
+</script>
+</html>
