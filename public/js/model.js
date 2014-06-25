@@ -47,7 +47,7 @@ ShoppingList.prototype.addElement = function(newItem){
     var myList = this;
     $.ajax({
         type: "POST",
-        url: "/model",
+        url: "/shopping",
         data: JSON.stringify(newItem),
         contentType: "application/json; charset=utf-8",
         dataType: "json"
@@ -60,7 +60,7 @@ ShoppingList.prototype.updateElement = function(id,newItem){
     var myList = this;
     $.ajax({
         type: "PUT",
-        url: "/model/"+id,
+        url: "/shopping/"+id,
         data: JSON.stringify(newItem),
         contentType: "application/json; charset=utf-8",
         dataType: "json"
@@ -73,7 +73,7 @@ ShoppingList.prototype.deleteElement = function(id){
     var myList = this;
     $.ajax({
         type: "DELETE",
-        url: "/model/"+id,
+        url: "/shopping/"+id,
     }).done(function(items) {
         myList.loadModel();
     });

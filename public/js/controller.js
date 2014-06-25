@@ -62,6 +62,7 @@ var shoppingApp = (function($) {
         console.log("purchasing item "+itemId);
         item = myList.getElement(itemId);
         item.purchased= !item.purchased;
+        myList.updateElement(item.id,item);
         refreshView();
     }
 
