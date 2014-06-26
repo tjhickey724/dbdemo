@@ -65,11 +65,14 @@ app.put('/model/:collection/:id', function(req, res) {
 });
 
 // add new item to the model
+// in this example we show how to use javascript promises
+// to simply asynchronous calls
 app.post('/model/:collection', function(req, res) {
     console.log("post ... " + JSON.stringify(req.body));
     var collection = db.get(req.params.collection);
-    collection.insert(req.body);
-    res.json(200, {});
+    var promise = collection.insert(req.body);
+    promise.success(function(doc){res.json(200,doc)});
+    promise.error(function(error){res.json(404,error)});
 });
 
 // delete a particular item from the model

@@ -13,6 +13,11 @@ var shoppingApp = (function($) {
 
     // first create the model
     var myList = new ShoppingList();
+    
+    var showView = function(selected) {
+      window.location.hash = '#' + selected;
+      $('.view').hide().filter('#' + selected + '-view').show();
+    };
 
 
     function handleDeleteItem(element) {
@@ -24,12 +29,14 @@ var shoppingApp = (function($) {
 
     function addItem(element) {
         var element = document.getElementById("newItemName");
+
         console.log("new item " + element.value);
         myList.addElement({
             action: element.value,
             price: 0,
             quantity: 0
         });
+        element.value="";
     }
     
     function editPrice(element){
@@ -78,11 +85,21 @@ var shoppingApp = (function($) {
         myList.loadModel();
         refreshView();
     }
+    
+    function initEventListeners(){
+        $(window).on('hashchange', function(event){
+          var view = (window.location.hash || '').replace(/^#/, '');
+          if ($('#' + view + '-view').length) {
+            showView(view);
+          }
+        });
+    }
 
     function start() {
         myList.loadModel();
         console.log("myList = " + JSON.stringify(myList));
         shoppingView.refreshView(myList);
+        showView("welcome");
 
 
     }
@@ -97,7 +114,8 @@ var shoppingApp = (function($) {
         editItem: editItem,
         reloadModel: reloadModel,
         editPrice: editPrice,
-        editQuantity: editQuantity
+        editQuantity: editQuantity,
+        showView: showView
     }
 
     return (shoppingApp);
