@@ -34,7 +34,7 @@ ShoppingList.prototype.loadModel = function() {
     // send request to the server for the items in the list
     $.ajax({
         type: "GET",
-        url: "/shopping",
+        url: "/model/shopping",
     }).done(function(items) {
         myList.items = items;
         items.map(function(x){x.id=x["_id"];});
@@ -47,7 +47,7 @@ ShoppingList.prototype.addElement = function(newItem){
     var myList = this;
     $.ajax({
         type: "POST",
-        url: "/shopping",
+        url: "/model/shopping",
         data: JSON.stringify(newItem),
         contentType: "application/json; charset=utf-8",
         dataType: "json"
@@ -60,7 +60,7 @@ ShoppingList.prototype.updateElement = function(id,newItem){
     var myList = this;
     $.ajax({
         type: "PUT",
-        url: "/shopping/"+id,
+        url: "/model/shopping/"+id,
         data: JSON.stringify(newItem),
         contentType: "application/json; charset=utf-8",
         dataType: "json"
@@ -73,7 +73,7 @@ ShoppingList.prototype.deleteElement = function(id){
     var myList = this;
     $.ajax({
         type: "DELETE",
-        url: "/shopping/"+id,
+        url: "/model/shopping/"+id,
     }).done(function(items) {
         myList.loadModel();
     });

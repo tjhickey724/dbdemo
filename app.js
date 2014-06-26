@@ -34,19 +34,21 @@ app.use(function(req, res, next) {
 
 
 // get a particular item from the model
-app.get('/model/:id', function(req, res) {
-    var n = req.params.id;
-    var item = null;
-    for (var i = 0; i < myData.length; i++) {
-        if (myData[i].id == n) item = myData[i];
-    }
-    res.json(200, item);
+app.get('/model/:collection/:id', function(req, res) {
+    var collection = db.get(req.params.collection);
+    collection.find({_id: req.params.id}, {}, function(e, docs) {
+        console.log(JSON.stringify(docs));
+        if (docs.length>0)
+            res.json(200, docs[0]);
+        else
+            res.json(404,{});
+    })
 });
 
 
 // get all items from the model
-app.get('/shopping', function(req, res) {
-    var collection = db.get('shopping');
+app.get('/model/:collection', function(req, res) {
+    var collection = db.get(req.params.collection);
     collection.find({}, {}, function(e, docs) {
         console.log(JSON.stringify(docs));
         res.json(200, docs);
@@ -54,8 +56,8 @@ app.get('/shopping', function(req, res) {
 });
 
 // change an item in the model
-app.put('/shopping/:id', function(req, res) {
-    var collection = db.get('shopping');
+app.put('/model/:collection/:id', function(req, res) {
+    var collection = db.get(req.params.collection);
     collection.update({
         "_id": req.params.id
     }, req.body);
@@ -63,18 +65,18 @@ app.put('/shopping/:id', function(req, res) {
 });
 
 // add new item to the model
-app.post('/shopping', function(req, res) {
+app.post('/model/:collection', function(req, res) {
     console.log("post ... " + JSON.stringify(req.body));
-    var collection = db.get('shopping');
+    var collection = db.get(req.params.collection);
     collection.insert(req.body);
     res.json(200, {});
 });
 
 // delete a particular item from the model
-app.delete('/shopping/:id', function(req, res) {
+app.delete('/model/:collection/:id', function(req, res) {
     var id = req.params.id;
     console.log("deleting " + id);
-    var collection = db.get('shopping');
+    var collection = db.get(req.params.collection);
     collection.remove({
         _id: id
     });
