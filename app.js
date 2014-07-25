@@ -49,6 +49,12 @@ app.use(session({
     })
 }));
 
+app.get('/api/:name', function(req, res) {
+    res.json(200, {
+        "hello": req.params.name
+    });
+});
+
 // get a particular item from the model
 app.get('/model/:collection/:id', function(req, res) {
     var collection = db.get(req.params.collection);
