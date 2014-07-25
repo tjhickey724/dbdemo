@@ -29,7 +29,11 @@ var GoogleStrategy = require('passport-google').Strategy;
 var authed = function(req, res, next) {
         if (req.isAuthenticated()) {
             return next();
-        } else if (redisClient.ready) {
+        } else {
+             res.redirect('/login.html');
+        }
+        /*
+        if (redisClient.ready) {
             res.json(403, {
                 error: "forbidden",
                 reason: "not_authenticated"
@@ -40,6 +44,7 @@ var authed = function(req, res, next) {
                 reason: "authentication_unavailable"
             });
         }
+        */
     };
 
 passport.serializeUser(function(user, done) {
@@ -62,9 +67,6 @@ passport.use(new GoogleStrategy({
 }));
 
 
-// serve static content from the public folder 
-app.use("/", express.static(__dirname + '/public'));
-
 
 
 // parse the bodies of all other queries as json
@@ -77,6 +79,7 @@ app.use(function(req, res, next) {
     //console.log("myData = "+JSON.stringify(myData));
     next();
 });
+
 
 // start using sessions...
 //app.use(session({ secret: 'jfjfjfjf89fd89sd90s4j32kl' }));
@@ -91,6 +94,13 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// serve static content from the public folder 
+app.use("/",  express.static(__dirname + '/public'));
+
+app.use("/secret",authed, function(req,res){
+    res.redirect("http://www.brandeis.edu");
+})
+
 app.get('/auth/google/:return?', passport.authenticate('google', {
     successRedirect: '/'
 }));
@@ -98,6 +108,12 @@ app.get('/auth/logout', function(req, res) {
     req.logout();
     res.redirect('/');
 });
+
+app.use(authed, function(req,res,next){
+   next()    
+});
+
+
 
 
 app.get('/api/user', authed, function(req, res) {
