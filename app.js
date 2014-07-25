@@ -16,6 +16,13 @@ var app = express();
 var monk = require('monk');
 var db = monk('localhost:27017/shopping');
 
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
+
+var redisClient = require('redis').createClient();
+var RedisStore = require('connect-redis')(session);
+
+
 
 // serve static content from the public folder 
 app.use("/", express.static(__dirname + '/public'));
@@ -32,16 +39,25 @@ app.use(function(req, res, next) {
     next();
 });
 
+// start using sessions...
+//app.use(session({ secret: 'jfjfjfjf89fd89sd90s4j32kl' }));
+app.use(cookieParser());
+app.use(session({
+    secret: 'unguessable',
+    store: new RedisStore({
+        client: redisClient
+    })
+}));
 
 // get a particular item from the model
 app.get('/model/:collection/:id', function(req, res) {
     var collection = db.get(req.params.collection);
-    collection.find({_id: req.params.id}, {}, function(e, docs) {
+    collection.find({
+        _id: req.params.id
+    }, {}, function(e, docs) {
         console.log(JSON.stringify(docs));
-        if (docs.length>0)
-            res.json(200, docs[0]);
-        else
-            res.json(404,{});
+        if (docs.length > 0) res.json(200, docs[0]);
+        else res.json(404, {});
     })
 });
 
@@ -71,8 +87,12 @@ app.post('/model/:collection', function(req, res) {
     console.log("post ... " + JSON.stringify(req.body));
     var collection = db.get(req.params.collection);
     var promise = collection.insert(req.body);
-    promise.success(function(doc){res.json(200,doc)});
-    promise.error(function(error){res.json(404,error)});
+    promise.success(function(doc) {
+        res.json(200, doc)
+    });
+    promise.error(function(error) {
+        res.json(404, error)
+    });
 });
 
 // delete a particular item from the model

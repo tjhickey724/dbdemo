@@ -8,8 +8,12 @@
   },
   "dependencies": {
     "body-parser": "^1.4.3",
+    "connect-redis": "^2.0.0",
+    "cookie-parser": "^1.3.2",
     "express": "^4.4.4",
+    "express-session": "^1.7.0",
     "mongodb": "^1.4.7",
-    "monk": "^0.9.0"
+    "monk": "^0.9.0",
+    "redis": "^0.11.0"
   }
 }
