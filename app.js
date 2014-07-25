@@ -23,6 +23,9 @@ var redisClient = require('redis').createClient();
 var RedisStore = require('connect-redis')(session);
 
 
+var passport = require('passport');
+var GoogleStrategy = require('passport-google').Strategy;
+
 
 // serve static content from the public folder 
 app.use("/", express.static(__dirname + '/public'));
@@ -48,6 +51,10 @@ app.use(session({
         client: redisClient
     })
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 app.get('/api/:name', function(req, res) {
     res.json(200, {
