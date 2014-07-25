@@ -26,9 +26,45 @@ var RedisStore = require('connect-redis')(session);
 var passport = require('passport');
 var GoogleStrategy = require('passport-google').Strategy;
 
+var authed = function(req, res, next) {
+        if (req.isAuthenticated()) {
+            return next();
+        } else if (redisClient.ready) {
+            res.json(403, {
+                error: "forbidden",
+                reason: "not_authenticated"
+            });
+        } else {
+            res.json(503, {
+                error: "service_unavailable",
+                reason: "authentication_unavailable"
+            });
+        }
+    };
+
+passport.serializeUser(function(user, done) {
+    done(null, user.identifier);
+});
+
+passport.deserializeUser(function(id, done) {
+    done(null, {
+        identifier: id
+    });
+});
+
+
+passport.use(new GoogleStrategy({
+    returnURL: 'http://localhost:3000/auth/google/return',
+    realm: 'http://localhost:3000/'
+}, function(identifier, profile, done) {
+    profile.identifier = identifier;
+    return done(null, profile);
+}));
+
 
 // serve static content from the public folder 
 app.use("/", express.static(__dirname + '/public'));
+
 
 
 // parse the bodies of all other queries as json
@@ -55,12 +91,25 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.get('/auth/google/:return?', passport.authenticate('google', {
+    successRedirect: '/'
+}));
+app.get('/auth/logout', function(req, res) {
+    req.logout();
+    res.redirect('/');
+});
+
+
+app.get('/api/user', authed, function(req, res) {
+    res.json(req.user);
+});
 
 app.get('/api/:name', function(req, res) {
     res.json(200, {
         "hello": req.params.name
     });
 });
+
 
 // get a particular item from the model
 app.get('/model/:collection/:id', function(req, res) {
