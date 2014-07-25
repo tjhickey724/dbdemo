@@ -122,7 +122,8 @@ app.get('/api/user', authed, function(req, res) {
 
 app.get('/api/:name', function(req, res) {
     res.json(200, {
-        "hello": req.params.name
+        "hello": req.params.name,
+        "userid": req.user
     });
 });
 
