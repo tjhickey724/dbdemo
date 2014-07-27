@@ -6,11 +6,13 @@
  This demo also adds the mongo database connection, but everything is in one file
  on the server side. We will break this out so that it has model/view/controller on
  the server and client in the next demo...
+ 
  We have extended the example by using passportjs to get user authentication using google
- and to extend the example to store many people's shopping lists!  
+ and to extend the example to store many people's shopping lists!
  
  The idea is to require authentication to use the app and then to use the authenticated id to
- lookup the user's shopping list ...
+ lookup the user's shopping list ... this requires adding the user's "openID" field to the schema
+ for the shopping collection...
  
  ***/
 
@@ -43,13 +45,13 @@ var ensureAuthenticated = function(req, res, next) {
     };
 
 passport.serializeUser(function(user, done) {
-    console.log("serializeUser: "+JSON.stringify(user));
+    //console.log("serializeUser: "+JSON.stringify(user));
     done(null, user);
 });
 
 passport.deserializeUser(function(obj, done) {
-    console.log("deserializeUser: "+JSON.stringify(obj));
-    done(null,obj);
+    //console.log("deserializeUser: "+JSON.stringify(obj));
+    done(null, obj);
 });
 
 
@@ -57,21 +59,26 @@ passport.use(new GoogleStrategy({
     returnURL: 'http://localhost:3000/auth/google/return',
     realm: 'http://localhost:3000/'
 }, function(identifier, profile, done) {
-    console.log("identifier="+JSON.stringify(identifier)+"  profile="+JSON.stringify(profile));
+    console.log("\nGoogleStrategy:\nidentifier=" + JSON.stringify(identifier) + "  profile=" + JSON.stringify(profile));
     User.find({
-        openId: identifier
+        openID: identifier
     }, function(err, user) {
-        console.log("err = "+JSON.stringify(err)+"\n  user="+JSON.stringify(user));
-        if (err || user.length==0){
-            user={};
-            user.openID=identifier;
-            user.profile=profile;
-            console.log("inserting user:"+ JSON.stringify(user));
+        console.log("err = " + JSON.stringify(err) + "\n  user=" + JSON.stringify(user));
+        if (user.length == 0) {
+            // if this is the first visit for the user, then insert him/her into the database
+            user = {};
+            user.openID = identifier;
+            user.profile = profile;
+            //console.log("inserting user:"+ JSON.stringify(user));
             db.get("user").insert(user);
-            console.log("inserted user");
+            //console.log("inserted user");
+            done(null, user);
+        } else {
+            // the user has been here before and there should only be one user
+            // matching the query (user[0]) so pass user[0] as user ...
+            console.log("Google Strategy .. user = " + JSON.stringify(user));
+            done(err, user[0]);
         }
-        console.log("Google Strategy .. user = "+JSON.stringify(user));
-        done(err, user);
     });
 }));
 
@@ -112,6 +119,7 @@ app.get('/auth/google/:return?', passport.authenticate('google', {
 
 // serve static content from the public folder 
 app.use("/login.html", express.static(__dirname + '/public/login.html'));
+app.use("/logout.html", express.static(__dirname + '/public/logout.html'));
 
 // we require everyone to login before they can use the app!
 app.use(ensureAuthenticated, function(req, res, next) {
@@ -129,7 +137,7 @@ app.use("/secret", ensureAuthenticated, function(req, res) {
 
 app.get('/auth/logout', function(req, res) {
     req.logout();
-    res.redirect('/');
+    res.redirect('/logout.html');
 });
 
 
@@ -153,7 +161,7 @@ app.get('/model/:collection/:id', function(req, res) {
     collection.find({
         _id: req.params.id
     }, {}, function(e, docs) {
-        console.log(JSON.stringify(docs));
+        //console.log(JSON.stringify(docs));
         if (docs.length > 0) res.json(200, docs[0]);
         else res.json(404, {});
     })
@@ -163,8 +171,11 @@ app.get('/model/:collection/:id', function(req, res) {
 // get all items from the model
 app.get('/model/:collection', function(req, res) {
     var collection = db.get(req.params.collection);
-    collection.find({}, {}, function(e, docs) {
-        console.log(JSON.stringify(docs));
+    //console.log("app.get -- req.user=" + JSON.stringify(req.user));
+    collection.find({
+        openID: req.user.openID
+    }, {}, function(e, docs) {
+        //console.log(JSON.stringify(docs));
         res.json(200, docs);
     })
 });
@@ -182,9 +193,13 @@ app.put('/model/:collection/:id', function(req, res) {
 // in this example we show how to use javascript promises
 // to simply asynchronous calls
 app.post('/model/:collection', function(req, res) {
-    console.log("post ... " + JSON.stringify(req.body));
+    //console.log("post ... " + JSON.stringify(req.body));
+    //console.log("post req.user=" + JSON.stringify(req.user));
     var collection = db.get(req.params.collection);
-    var promise = collection.insert(req.body);
+    var newItem = req.body;
+    newItem.openID = req.user.openID;
+    //console.log("post2 ... " + JSON.stringify(newItem));
+    var promise = collection.insert(newItem);
     promise.success(function(doc) {
         res.json(200, doc)
     });
@@ -196,7 +211,7 @@ app.post('/model/:collection', function(req, res) {
 // delete a particular item from the model
 app.delete('/model/:collection/:id', function(req, res) {
     var id = req.params.id;
-    console.log("deleting " + id);
+    //console.log("deleting " + id);
     var collection = db.get(req.params.collection);
     collection.remove({
         _id: id

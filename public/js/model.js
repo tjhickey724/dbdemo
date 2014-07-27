@@ -7,9 +7,20 @@
 **/
 
 function ShoppingList() {
-    this.user = "Tim";
+    var myList = this;
+    this.user = "none";
     this.cutoff = 0;
     this.items = [];
+    
+    $.ajax({
+        type: "GET",
+        url: "/api/user",
+    }).done(function(userData) {
+        myList.user = userData;
+        //console.log("user = "+JSON.stringify(myList.user));
+    });
+    
+
 
 };
 
@@ -40,10 +51,12 @@ ShoppingList.prototype.loadModel = function() {
         items.map(function(x){x.id=x["_id"];});
         shoppingView.refreshView(myList);
     });
+    
+
 };
 
 ShoppingList.prototype.addElement = function(newItem){
-    console.log("sending "+JSON.stringify(newItem));
+    //console.log("sending "+JSON.stringify(newItem));
     var myList = this;
     $.ajax({
         type: "POST",

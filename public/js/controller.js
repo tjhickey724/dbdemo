@@ -18,11 +18,12 @@ var shoppingApp = (function($) {
       window.location.hash = '#' + selected;
       $('.view').hide().filter('#' + selected + '-view').show();
     };
+    
 
 
     function handleDeleteItem(element) {
-        console.log("deleting item");
-        console.log(" with id " + element.getAttribute("sid"));
+        //console.log("deleting item");
+        //console.log(" with id " + element.getAttribute("sid"));
         myList.deleteElement(element.getAttribute("sid"));
 
     }
@@ -30,7 +31,7 @@ var shoppingApp = (function($) {
     function addItem(element) {
         var element = document.getElementById("newItemName");
 
-        console.log("new item " + element.value);
+        //console.log("new item " + element.value);
         myList.addElement({
             action: element.value,
             price: 0,
@@ -43,7 +44,7 @@ var shoppingApp = (function($) {
         var itemId = element.getAttribute("sid");
         var itemVal = element.value;
         var item;
-        console.log("item "+itemId+" has value "+itemVal);
+        //console.log("item "+itemId+" has value "+itemVal);
         item = myList.getElement(itemId);
         item.price = itemVal;
         myList.updateElement(item.id,item);
@@ -55,7 +56,7 @@ var shoppingApp = (function($) {
         var itemId = element.getAttribute("sid");
         var itemVal = element.value;
         var item;
-        console.log("item "+itemId+" has value "+itemVal);
+        //console.log("item "+itemId+" has value "+itemVal);
         item = myList.getElement(itemId);
         item.quantity = itemVal;
         myList.updateElement(item.id,item);
@@ -66,7 +67,7 @@ var shoppingApp = (function($) {
     function purchaseItem(element) {
         var itemId = element.getAttribute("sid");
         var item;
-        console.log("purchasing item "+itemId);
+        //console.log("purchasing item "+itemId);
         item = myList.getElement(itemId);
         item.purchased= !item.purchased;
         myList.updateElement(item.id,item);
@@ -74,7 +75,7 @@ var shoppingApp = (function($) {
     }
 
     function editItem(element) {
-        console.log("editing item "+element.getAttribute("sid"));
+        //console.log("editing item "+element.getAttribute("sid"));
     }
 
     function refreshView(){
@@ -97,7 +98,7 @@ var shoppingApp = (function($) {
 
     function start() {
         myList.loadModel();
-        console.log("myList = " + JSON.stringify(myList));
+        //console.log("myList = " + JSON.stringify(myList));
         shoppingView.refreshView(myList);
         showView("welcome");
 

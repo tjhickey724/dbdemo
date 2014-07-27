@@ -8,15 +8,13 @@ var shoppingView = (function($){
     function refreshView(myData){
         refreshTable(myData.items);
         updateTitle(myData.user);
-        updateTotalPrice(myData);
-        
-        
+        updateTotalPrice(myData);     
     }
     
     
     // updates the title with the user's name
     function updateTitle(user){
-        var newTitle = user + "'s Super Shopping List";
+        var newTitle = (user.profile? user.profile.displayName: "customer") + "'s Super Shopping List";
         $("#title").html(newTitle);
     }
     
@@ -59,8 +57,8 @@ var shoppingView = (function($){
                 var len = myItems.length;
                 var filteredItems = filterItems(myItems);
                 var sortedItems = sortItems(filteredItems);
-                console.log("filteredItems = "+ JSON.stringify(filteredItems));
-                console.log("sortedItems = "+JSON.stringify(sortedItems));
+                //console.log("filteredItems = "+ JSON.stringify(filteredItems));
+                //console.log("sortedItems = "+JSON.stringify(sortedItems));
                 
                 for(var n=0; n<sortedItems.length; n++){ 
                     var item = sortedItems[n];
