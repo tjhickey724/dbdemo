@@ -6,6 +6,12 @@
  This demo also adds the mongo database connection, but everything is in one file
  on the server side. We will break this out so that it has model/view/controller on
  the server and client in the next demo...
+ We have extended the example by using passportjs to get user authentication using google
+ and to extend the example to store many people's shopping lists!  
+ 
+ The idea is to require authentication to use the app and then to use the authenticated id to
+ lookup the user's shopping list ...
+ 
  ***/
 
 'use strict';
@@ -15,6 +21,7 @@ var app = express();
 
 var monk = require('monk');
 var db = monk('localhost:27017/shopping');
+var User = db.get("user");
 
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
@@ -26,35 +33,23 @@ var RedisStore = require('connect-redis')(session);
 var passport = require('passport');
 var GoogleStrategy = require('passport-google').Strategy;
 
-var authed = function(req, res, next) {
+var ensureAuthenticated = function(req, res, next) {
         if (req.isAuthenticated()) {
+            console.log("req.user=" + JSON.stringify(req.user));
             return next();
         } else {
-             res.redirect('/login.html');
+            res.redirect('/login.html');
         }
-        /*
-        if (redisClient.ready) {
-            res.json(403, {
-                error: "forbidden",
-                reason: "not_authenticated"
-            });
-        } else {
-            res.json(503, {
-                error: "service_unavailable",
-                reason: "authentication_unavailable"
-            });
-        }
-        */
     };
 
 passport.serializeUser(function(user, done) {
-    done(null, user.identifier);
+    console.log("serializeUser: "+JSON.stringify(user));
+    done(null, user);
 });
 
-passport.deserializeUser(function(id, done) {
-    done(null, {
-        identifier: id
-    });
+passport.deserializeUser(function(obj, done) {
+    console.log("deserializeUser: "+JSON.stringify(obj));
+    done(null,obj);
 });
 
 
@@ -62,8 +57,22 @@ passport.use(new GoogleStrategy({
     returnURL: 'http://localhost:3000/auth/google/return',
     realm: 'http://localhost:3000/'
 }, function(identifier, profile, done) {
-    profile.identifier = identifier;
-    return done(null, profile);
+    console.log("identifier="+JSON.stringify(identifier)+"  profile="+JSON.stringify(profile));
+    User.find({
+        openId: identifier
+    }, function(err, user) {
+        console.log("err = "+JSON.stringify(err)+"\n  user="+JSON.stringify(user));
+        if (err || user.length==0){
+            user={};
+            user.openID=identifier;
+            user.profile=profile;
+            console.log("inserting user:"+ JSON.stringify(user));
+            db.get("user").insert(user);
+            console.log("inserted user");
+        }
+        console.log("Google Strategy .. user = "+JSON.stringify(user));
+        done(err, user);
+    });
 }));
 
 
@@ -94,29 +103,39 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// serve static content from the public folder 
-app.use("/",  express.static(__dirname + '/public'));
 
-app.use("/secret",authed, function(req,res){
+app.get('/auth/google/:return?', passport.authenticate('google', {
+    successRedirect: '/',
+    failureRedirect: '/login'
+}));
+
+
+// serve static content from the public folder 
+app.use("/login.html", express.static(__dirname + '/public/login.html'));
+
+// we require everyone to login before they can use the app!
+app.use(ensureAuthenticated, function(req, res, next) {
+    next()
+});
+
+
+// serve static content from the public folder 
+app.use("/", express.static(__dirname + '/public'));
+
+app.use("/secret", ensureAuthenticated, function(req, res) {
     res.redirect("http://www.brandeis.edu");
 })
 
-app.get('/auth/google/:return?', passport.authenticate('google', {
-    successRedirect: '/'
-}));
+
 app.get('/auth/logout', function(req, res) {
     req.logout();
     res.redirect('/');
 });
 
-app.use(authed, function(req,res,next){
-   next()    
-});
 
 
 
-
-app.get('/api/user', authed, function(req, res) {
+app.get('/api/user', ensureAuthenticated, function(req, res) {
     res.json(req.user);
 });
 
