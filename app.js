@@ -14,6 +14,8 @@
  lookup the user's shopping list ... this requires adding the user's "openID" field to the schema
  for the shopping collection...
  
+ This relies on starting a redis-server and a mongod server before staring up the app...
+ 
  ***/
 
 'use strict';
@@ -25,19 +27,24 @@ var monk = require('monk');
 var db = monk('localhost:27017/shopping');
 var User = db.get("user");
 
+
+
+
+//**********************************************************
+// The following is needed for the passport authentication 
+//**********************************************************
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
 
 var redisClient = require('redis').createClient();
 var RedisStore = require('connect-redis')(session);
 
-
 var passport = require('passport');
 var GoogleStrategy = require('passport-google').Strategy;
 
 var ensureAuthenticated = function(req, res, next) {
         if (req.isAuthenticated()) {
-            console.log("req.user=" + JSON.stringify(req.user));
+            //console.log("req.user=" + JSON.stringify(req.user));
             return next();
         } else {
             res.redirect('/login.html');
@@ -82,7 +89,7 @@ passport.use(new GoogleStrategy({
     });
 }));
 
-
+//**********************************************************
 
 
 // parse the bodies of all other queries as json
@@ -97,7 +104,10 @@ app.use(function(req, res, next) {
 });
 
 
+//**********************************************************
+// This is needed for the passport authentication
 // start using sessions...
+//**********************************************************
 //app.use(session({ secret: 'jfjfjfjf89fd89sd90s4j32kl' }));
 app.use(cookieParser());
 app.use(session({
@@ -126,10 +136,19 @@ app.use(ensureAuthenticated, function(req, res, next) {
     next()
 });
 
+//**********************************************************
+
+
+
 
 // serve static content from the public folder 
 app.use("/", express.static(__dirname + '/public'));
 
+
+//**********************************************************
+// this is just to demonstrate how to use the ensureAuthenticated middleware
+// to restrict access to a route to authenticated users
+//**********************************************************
 app.use("/secret", ensureAuthenticated, function(req, res) {
     res.redirect("http://www.brandeis.edu");
 })
@@ -140,22 +159,18 @@ app.get('/auth/logout', function(req, res) {
     res.redirect('/logout.html');
 });
 
-
-
-
+// this returns the user info
 app.get('/api/user', ensureAuthenticated, function(req, res) {
     res.json(req.user);
 });
-
-app.get('/api/:name', function(req, res) {
-    res.json(200, {
-        "hello": req.params.name,
-        "userid": req.user
-    });
-});
+//**********************************************************
 
 
+
+//**********************************************************
+// the rest of this app implements a REST interface to parts of the database ...
 // get a particular item from the model
+//**********************************************************
 app.get('/model/:collection/:id', function(req, res) {
     var collection = db.get(req.params.collection);
     collection.find({
@@ -220,7 +235,11 @@ app.delete('/model/:collection/:id', function(req, res) {
 });
 
 
+
+//**********************************************************
+// Finally we assign the server to a port ....
 // listen on port 3000
+//**********************************************************
 var port = 3000;
 app.listen(port, function() {
     console.log("server is listening on port " + port);
