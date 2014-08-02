@@ -238,9 +238,8 @@ app.delete('/model/:collection/:id', function(req, res) {
 
 //**********************************************************
 // Finally we assign the server to a port ....
-// listen on port 3000
 //**********************************************************
-var port = 3000;
+var port = 6000;
 app.listen(port, function() {
     console.log("server is listening on port " + port);
 });
