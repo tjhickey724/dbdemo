@@ -1,7 +1,22 @@
 #!/usr/bin/env node --harmony
 
 /***
- firstServer.js
+ dbdemo
+
+Update 8/4/2014
+ We have modified the dbdemo so that it uses google oauth authentication
+ using the passport-google-oauth module.  This required us to move back to
+ an earlier version of express (version 3.0.0) rather than the latest version
+ that we had been using (4.4.4) because to google-oauth module was incompatible
+ with passport version 4...
+
+ Also, this file contains the clientID and clientSecret for this app which is
+ clearly not best practice when writing apps for production, but I'll change them
+ fairly soon so these will be out of date!
+ 
+
+
+Update 7/24/2014
  This is a simple server illustrating middleware and basic REST functionality
  This demo also adds the mongo database connection, but everything is in one file
  on the server side. We will break this out so that it has model/view/controller on
@@ -40,7 +55,7 @@ var redisClient = require('redis').createClient();
 var RedisStore = require('connect-redis')(session);
 
 var passport = require('passport');
-var GoogleStrategy = require('passport-google').Strategy;
+var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 
 var ensureAuthenticated = function(req, res, next) {
         if (req.isAuthenticated()) {
@@ -63,18 +78,22 @@ passport.deserializeUser(function(obj, done) {
 
 
 passport.use(new GoogleStrategy({
-    returnURL: 'http://localhost:3000/auth/google/return',
-    realm: 'http://localhost:3000/'
-}, function(identifier, profile, done) {
-    console.log("\nGoogleStrategy:\nidentifier=" + JSON.stringify(identifier) + "  profile=" + JSON.stringify(profile));
+	    clientID: '1028409905067-r5a8sglbg21hpt4sk84i2hpjbdu3uekc.apps.googleusercontent.com',
+		clientSecret: 'Drxg-wgTb0m6hW2flm7DjpER',
+		callbackURL: "http://leiner.cs-i.brandeis.edu:6000/auth/google/callback"
+		},
+	function(accessToken, refreshToken, profile, done) {
+        console.log("aT = " + JSON.stringify(accessToken) + 
+		    "\n  rt=" + JSON.stringify(refreshToken) +
+		    "\n  pr=" + JSON.stringify(profile));
     User.find({
-        openID: identifier
+        openID: profile.id
     }, function(err, user) {
         console.log("err = " + JSON.stringify(err) + "\n  user=" + JSON.stringify(user));
         if (user.length == 0) {
             // if this is the first visit for the user, then insert him/her into the database
             user = {};
-            user.openID = identifier;
+            user.openID = profile.id;
             user.profile = profile;
             //console.log("inserting user:"+ JSON.stringify(user));
             db.get("user").insert(user);
@@ -86,8 +105,7 @@ passport.use(new GoogleStrategy({
             console.log("Google Strategy .. user = " + JSON.stringify(user));
             done(err, user[0]);
         }
-    });
-}));
+	})}));
 
 //**********************************************************
 
@@ -121,11 +139,19 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 
-app.get('/auth/google/:return?', passport.authenticate('google', {
-    successRedirect: '/',
-    failureRedirect: '/login'
-}));
+app.get('/auth/google',
+	passport.authenticate('google', 
 
+			      {scope: 'https://www.googleapis.com/auth/plus.me https://www.googleapis.com/auth/plus.login https://www.google.com/m8/feeds https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'}));
+
+
+
+app.get('/auth/google/callback', 
+	passport.authenticate('google', { failureRedirect: '/login' }),
+	function(req, res) {
+	    // Successful authentication, redirect home.
+	    res.redirect('/');
+	});
 
 // serve static content from the public folder 
 app.use("/login.html", express.static(__dirname + '/public/login.html'));
